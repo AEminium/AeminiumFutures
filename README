@@ -1,0 +1,15 @@
+Aeminium Futures
+
+This is a wrapper around Æminium Runtime Tasks that allows for a programming
+style similar to Futures.
+
+Futures have two fields: it, the returned value and task, the object that
+should be passed to other futures that access that variable.
+
+Note that no code should be outside futures, even if the return type is void.
+
+Author:
+
+Alcides Fonseca <amaf@dei.uc.pt>
+
+http://aeminium.dei.uc.pt/
