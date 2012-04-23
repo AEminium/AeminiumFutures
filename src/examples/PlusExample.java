@@ -1,7 +1,8 @@
+package examples;
 import aeminium.runtime.futures.Future;
 import aeminium.runtime.futures.RuntimeManager;
 
-public class Example {
+public class PlusExample {
 
 	
 	public static void seq() {
