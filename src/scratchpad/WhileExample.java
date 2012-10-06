@@ -1,7 +1,7 @@
-package examples;
+package scratchpad;
 import aeminium.runtime.Task;
 import aeminium.runtime.futures.Future;
-import aeminium.runtime.futures.FutureChildren;
+import aeminium.runtime.futures.FutureChild;
 import aeminium.runtime.futures.HollowFuture;
 import aeminium.runtime.futures.RuntimeManager;
 import aeminium.runtime.futures.codegen.Expression;
@@ -38,7 +38,7 @@ public class WhileExample {
 				}, new Expression<Void>() {
 					@Override
 					public Void evaluate(Task t) {
-						final FutureChildren<Integer> tmp1 = new FutureChildren<Integer>(t, i_0){
+						final FutureChild<Integer> tmp1 = new FutureChild<Integer>(t, i_0){
 							public Integer evaluate() {
 								int i = (int) i_0.it;
 								System.out.println("i:" + i);
@@ -47,7 +47,7 @@ public class WhileExample {
 								return i;
 							}
 	        			};
-	        			final FutureChildren<Void> tmp2 = new FutureChildren<Void>(t, tmp1){
+	        			final FutureChild<Void> tmp2 = new FutureChild<Void>(t, tmp1){
 							public Void evaluate() {
 								i_0.replace(tmp1);
 								return null;

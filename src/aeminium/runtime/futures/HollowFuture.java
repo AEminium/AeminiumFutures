@@ -6,14 +6,17 @@ import java.util.Collection;
 import aeminium.runtime.Task;
 import aeminium.runtime.futures.dependencies.Dependency;
 
+
+/* The Base Class for all Futures, containing the task and the dependencies. */
 public abstract class HollowFuture<T> {
+	
 	public Dependency dep;
 	public T it;
 	public Task task;
 
 	abstract public T evaluate();
 	
-	protected Collection<Task> prepareDependencies(HollowFuture<?>... futures) {
+	protected Collection<Task> prepareDependencies(Collection<HollowFuture<?>> futures) {
 		Collection<Task> c = new ArrayList<Task>();
 		for(HollowFuture<?> f : futures) {
 			f.dep.mergeDependencies(c);

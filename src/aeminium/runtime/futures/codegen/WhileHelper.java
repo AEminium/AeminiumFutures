@@ -1,7 +1,7 @@
 package aeminium.runtime.futures.codegen;
 
 import aeminium.runtime.Task;
-import aeminium.runtime.futures.FutureChildren;
+import aeminium.runtime.futures.FutureChild;
 
 public class WhileHelper {
 
@@ -10,7 +10,7 @@ public class WhileHelper {
 			final Expression<Void> body) {
 		if (e.evaluate(currentTask)) {
 			
-			final FutureChildren<Void> b = new FutureChildren<Void>(currentTask) {
+			final FutureChild<Void> b = new FutureChild<Void>(currentTask) {
 				@Override
 				public Void evaluate() {
 					body.evaluate(this.task);
@@ -18,7 +18,7 @@ public class WhileHelper {
 				}
 			};
 
-			new FutureChildren<Void>(currentTask, b) {
+			new FutureChild<Void>(currentTask, b) {
 				@Override
 				public Void evaluate() {
 					WhileHelper.whileLoop(this.task, e, body);

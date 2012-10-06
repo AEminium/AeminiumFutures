@@ -1,6 +1,6 @@
-package examples;
+package scratchpad;
 import aeminium.runtime.futures.Future;
-import aeminium.runtime.futures.FutureChildren;
+import aeminium.runtime.futures.FutureChild;
 import aeminium.runtime.futures.RuntimeManager;
 
 @SuppressWarnings("unused")
@@ -39,7 +39,7 @@ public class IfExample {
 			public Void evaluate() {
 				
         		if ( i_0.it < j_0.it) {
-        			i_0.replace(new FutureChildren<Integer>(this.task, i_0){
+        			i_0.replace(new FutureChild<Integer>(this.task, i_0){
 						@Override
 						public Integer evaluate() {
 							int tmp = (int) i_0.it;
@@ -48,7 +48,7 @@ public class IfExample {
 						}
         			});
         		} else {
-        			j_0.replace(new FutureChildren<Integer>(this.task, j_0){
+        			j_0.replace(new FutureChild<Integer>(this.task, j_0){
 						@Override
 						public Integer evaluate() {
 							int tmp = (int) j_0.it;

@@ -1,4 +1,4 @@
-package examples;
+package scratchpad;
 import aeminium.runtime.futures.Future;
 import aeminium.runtime.futures.RuntimeManager;
 
