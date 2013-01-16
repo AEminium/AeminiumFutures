@@ -3,6 +3,7 @@ package aeminium.runtime.futures;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import aeminium.runtime.DataGroup;
 import aeminium.runtime.Task;
 import aeminium.runtime.futures.dependencies.Dependency;
 
@@ -13,7 +14,8 @@ public abstract class HollowFuture<T> {
 	public Dependency dep;
 	public T it;
 	public Task task;
-
+	public DataGroup dg;
+	
 	abstract public T evaluate();
 	
 	protected Collection<Task> prepareDependencies(Collection<HollowFuture<?>> futures) {

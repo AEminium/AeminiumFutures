@@ -3,6 +3,7 @@ package aeminium.runtime.futures;
 import java.util.Collection;
 
 import aeminium.runtime.Body;
+import aeminium.runtime.DataGroup;
 import aeminium.runtime.Runtime;
 import aeminium.runtime.Task;
 import aeminium.runtime.futures.dependencies.DependencyTaskWrapper;
@@ -41,10 +42,19 @@ public class RuntimeManager {
 			}
 		};
 			
-		Task t = rt.createNonBlockingTask(b, Runtime.NO_HINTS);
+		Task t;
+		if (f.dg != null) {
+			t = rt.createAtomicTask(b, f.dg, Runtime.NO_HINTS);
+		} else {
+			t = rt.createNonBlockingTask(b, Runtime.NO_HINTS);
+		}
 		f.dep = new DependencyTaskWrapper(t);
 		f.task = t;
 		rt.schedule(t, parent, deps);
+	}
+	
+	public static DataGroup getNewDataGroup() {
+		return rt.createDataGroup();
 	}
 	
 }
