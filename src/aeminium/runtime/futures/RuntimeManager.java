@@ -10,12 +10,15 @@ import aeminium.runtime.futures.dependencies.DependencyTaskWrapper;
 import aeminium.runtime.implementations.Factory;
 
 public class RuntimeManager {
+	static ThreadLocal<Task> currentTask = new ThreadLocal<Task>();
+	
 	static int rtcalls = 0;
-	final static Runtime rt = Factory.getRuntime();
+	public final static Runtime rt = Factory.getRuntime();
 	
 	public static void init() {
-		if (rtcalls++ == 0)
+		if (rtcalls++ == 0) {
 			rt.init();
+		}
 	}
 
 	public static void shutdown() {
@@ -27,14 +30,25 @@ public class RuntimeManager {
 	}
 	
 	public static <T> void submit(final HollowFuture<T> f, Collection<Task> deps) {
-		RuntimeManager.submit(f, Runtime.NO_PARENT, deps);
+		Task parent = Runtime.NO_PARENT;
+		if (currentTask.get() != null) {
+			parent = currentTask.get();
+		}
+		RuntimeManager.submit(f, parent, deps);
 	}
 	
 	public static <T> void submit(final HollowFuture<T> f, Task parent, Collection<Task> deps) {
+		if (!rt.parallelize(parent)) {
+			f.it = f.body.evaluate(parent);
+			return;
+		}
+		
 		Body b = new Body() {
 			@Override
 			public void execute(Runtime rt, Task current) throws Exception {
-				f.it = f.evaluate();
+				currentTask.set(current);
+				f.it = f.body.evaluate(current);
+				currentTask.set(null);
 			}
 			@Override
 			public String toString() {

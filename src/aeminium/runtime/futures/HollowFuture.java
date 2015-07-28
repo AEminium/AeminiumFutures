@@ -15,8 +15,7 @@ public abstract class HollowFuture<T> {
 	public T it;
 	public Task task;
 	public DataGroup dg;
-	
-	abstract public T evaluate();
+	protected FutureBody<T> body;
 	
 	protected Collection<Task> prepareDependencies(Collection<HollowFuture<?>> futures) {
 		Collection<Task> c = new ArrayList<Task>();
@@ -33,5 +32,9 @@ public abstract class HollowFuture<T> {
 		it = f.it;
 	}
 	
+	public T get() {
+		task.getResult();
+		return it;
+	}
 	
 }

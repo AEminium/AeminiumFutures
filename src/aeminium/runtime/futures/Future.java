@@ -5,14 +5,19 @@ import java.util.Collection;
 
 import aeminium.runtime.Runtime;
 
-public abstract class Future<T> extends HollowFuture<T>{
+public class Future<T> extends HollowFuture<T>{
 	
-	public Future(HollowFuture<?>... futures) {
+	public Future(FutureBody<T> b, HollowFuture<?>... futures) {
+		body = b;
 		RuntimeManager.submit(this, Runtime.NO_PARENT, prepareDependencies(Arrays.asList(futures)));
 	}
 	
-	public Future(Collection<HollowFuture<?>> futures) {
+	public Future(FutureBody<T> b, Collection<HollowFuture<?>> futures) {
+		body = b;
 		RuntimeManager.submit(this, Runtime.NO_PARENT, prepareDependencies(futures));
 	}
-		
+	
+	public T evaluate() {
+		return body.evaluate(this.task);
+	}
 }
