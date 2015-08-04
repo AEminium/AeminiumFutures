@@ -4,6 +4,7 @@ import java.util.Collection;
 
 import aeminium.runtime.Body;
 import aeminium.runtime.DataGroup;
+import aeminium.runtime.ErrorHandler;
 import aeminium.runtime.Runtime;
 import aeminium.runtime.Task;
 import aeminium.runtime.futures.dependencies.DependencyTaskWrapper;
@@ -11,13 +12,41 @@ import aeminium.runtime.implementations.Factory;
 
 public class RuntimeManager {
 	static ThreadLocal<Task> currentTask = new ThreadLocal<Task>();
-	
+
 	static int rtcalls = 0;
 	public final static Runtime rt = Factory.getRuntime();
 	
 	public static void init() {
 		if (rtcalls++ == 0) {
 			rt.init();
+			rt.addErrorHandler(new ErrorHandler() {
+
+				@Override
+				public void handleTaskException(Task task, Throwable t) {
+					t.printStackTrace();
+				}
+
+				@Override
+				public void handleLockingDeadlock() {
+					System.err.println("Deadlocked");
+				}
+
+				@Override
+				public void handleDependencyCycle(Task task) {
+					System.err.println("Cyclic dependency " + task);
+				}
+
+				@Override
+				public void handleTaskDuplicatedSchedule(Task task) {
+					System.err.println("Duplicated task " + task);
+				}
+
+				@Override
+				public void handleInternalError(Error err) {
+					err.printStackTrace();
+				}
+				
+			});
 		}
 	}
 
@@ -27,21 +56,32 @@ public class RuntimeManager {
 			rt.shutdown();
 			rtcalls = 0;
 		}
+	}	
+	
+	public static boolean shouldSeq() {
+		if (currentTask.get() != null) {
+			return !rt.parallelize(currentTask.get());
+		}
+		return false;
+	}
+	
+	public static boolean shouldSeq(Task t) {
+		return !rt.parallelize(t);
 	}
 	
 	public static <T> void submit(final HollowFuture<T> f, Collection<Task> deps) {
-		Task parent = Runtime.NO_PARENT;
-		if (currentTask.get() != null) {
-			parent = currentTask.get();
-		}
-		RuntimeManager.submit(f, parent, deps);
+		RuntimeManager.submit(f, getCurrentTask(), deps);
 	}
 	
 	public static <T> void submit(final HollowFuture<T> f, Task parent, Collection<Task> deps) {
-		if (!rt.parallelize(parent)) {
+		/*
+		 * Currently being done by the compiler at the declaration site
+ 		if (!rt.parallelize(parent)) {
+		 
 			f.it = f.body.evaluate(parent);
 			return;
 		}
+		*/
 		
 		Body b = new Body() {
 			@Override
@@ -69,6 +109,14 @@ public class RuntimeManager {
 	
 	public static DataGroup getNewDataGroup() {
 		return rt.createDataGroup();
+	}
+
+	public static Task getCurrentTask() {
+		Task current = Runtime.NO_PARENT;
+		if (currentTask.get() != null) {
+			current = currentTask.get();
+		}
+		return current;
 	}
 	
 }
