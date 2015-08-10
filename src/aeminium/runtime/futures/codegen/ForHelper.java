@@ -15,44 +15,69 @@ import aeminium.runtime.helpers.loops.ForTask;
 
 public class ForHelper {
 	
-	public static BiFunction<Integer, Integer, Integer> intSum = (Integer t1, Integer t2) -> t1 + t2;
-	public static int PPS = ForTask.PPS;
+	public static BiFunction<Integer, Integer, Integer> intSum = (t1, t2) -> t1 + t2;
+	public static BiFunction<Long, Long, Long> longSum = (t1, t2) -> t1 + t2;
+	public static BiFunction<Float, Float, Float> floatSum = (t1, t2) -> t1 + t2;
+	public static BiFunction<Double, Double, Double> doubleSum = (t1, t2) -> t1 + t2;
 	
-	public static void forContinuousInt(int initial, int end, Function<Integer, Void> fun) {
+	public static void forContinuousInt(int start, int end, Function<Integer, Void> fun, short hint) {
+		if (start == end) return;
+		if (end-start < 10000 && Hints.check(hint, Hints.SMALL)) {
+			for (int i=start; i<end; i++)
+				fun.apply(i);
+			return;
+		}
+		
 		Task parent = RuntimeManager.getCurrentTask();
-		Body b = forContinuousIntBody(initial, end, fun);
+		Body b = forContinuousIntBody(start, end, fun, hint);
 		Task current = RuntimeManager.rt.createNonBlockingTask(b,
 				(short) (Hints.RECURSION | Hints.LOOPS));
 		RuntimeManager.rt.schedule(current, parent, Runtime.NO_DEPS);
+		current.getResult();
 	}
 
 	public static Body forContinuousIntBody(final int start, final int end,
-			Function<Integer, Void> fun) {
+			Function<Integer, Void> fun, short hint) {
 		return new Body() {
 			@Override
 			public void execute(Runtime rt, Task current) throws Exception {
+				if (start == end) return;
+				if (end-start < 10000 && Hints.check(hint, Hints.SMALL)) {
+					for (int i=start; i<end; i++) {
+						fun.apply(i);
+					}
+					return;
+				}
+				
+				ArrayList<Task> children = new ArrayList<Task>();
+				
 				int bottom = start;
 				int top = end;
-
+				int pps = ForTask.PPS;
+				if (Hints.check(hint, Hints.SMALL))
+					pps *= 100;
+				
 				while (bottom < top) {
-					boolean shouldCheck = (bottom % PPS == 0);
-					if (shouldCheck && (top-bottom > PPS) && rt.parallelize(current)) {
+					boolean checkPar = bottom % pps == 0;
+					if (checkPar && top-bottom > 1 && rt.parallelize(current)) {
 						int half = (top - bottom)/2 + bottom;
-						Task otherHalf = rt.createNonBlockingTask(forContinuousIntBody(half, top, fun), Hints.LOOPS);
+						Task otherHalf = rt.createNonBlockingTask(forContinuousIntBody(half, top, fun, hint), Hints.LOOPS);
 						rt.schedule(otherHalf, current, Runtime.NO_DEPS);
+						children.add(otherHalf);
 						top = half;
-					} else {
-						fun.apply(bottom);
-						bottom ++;
+					} else {						
+						fun.apply(bottom++);
 					}
 				}
+				for (Task child : children) 
+					child.getResult();
 			}
 		};
 	}
 	
-	public static <T> HollowFuture<T> forContinuousIntReduce1(int initial, int end, Function<Integer, T> fun, BiFunction<T, T, T> reduce ) {
+	public static <T> HollowFuture<T> forContinuousIntReduce1(int start, int end, Function<Integer, T> fun, BiFunction<T, T, T> reduce ) {
 		Task parent = RuntimeManager.getCurrentTask();
-		Body b = forContinuousIntReduce1Body(initial, end, fun, reduce);
+		Body b = forContinuousIntReduce1Body(start, end, fun, reduce);
 		Task current = RuntimeManager.rt.createNonBlockingTask(b,
 				(short) (Hints.RECURSION | Hints.LOOPS));
 		RuntimeManager.rt.schedule(current, parent, Runtime.NO_DEPS);
@@ -67,12 +92,15 @@ public class ForHelper {
 			@SuppressWarnings("unchecked")
 			@Override
 			public void execute(Runtime rt, Task current) throws Exception {
+				if (start == end) return;
 				int bottom = start;
 				int top = end;
-
+				
+				int pps = ForTask.PPS;
+				
 				while (bottom < top) {
-					boolean shouldCheck = (bottom % PPS == 0);
-					if (shouldCheck && (top-bottom > PPS) && rt.parallelize(current)) {
+					boolean shouldCheck = (bottom % pps == 0);
+					if (shouldCheck && (top-bottom > 1) && rt.parallelize(current)) {
 						int half = (top - bottom)/2 + bottom;
 						Body b = forContinuousIntReduce1Body(half, top, fun, reduce);
 						Task otherHalf = rt.createNonBlockingTask(b, Hints.LOOPS);
@@ -102,7 +130,7 @@ public class ForHelper {
 		ForHelper.forContinuousInt(0, 10, (Integer t) -> {
 			System.out.println(t);
 			return null;
-		});
+		}, Hints.NO_HINTS);
 		
 		HollowFuture<Integer> t = ForHelper.forContinuousIntReduce1(0, 10, (Integer i) -> {
 			return 1;

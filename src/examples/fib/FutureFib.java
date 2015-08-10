@@ -19,5 +19,11 @@ public class FutureFib {
 			return a1.get() + a2.get();
 		}
 	}
+	
+	int[] createArray() {
+		int[] a = new int[1];
+		a[0] = 10;
+		return a;
+	}
 
 }
