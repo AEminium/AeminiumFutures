@@ -16,7 +16,7 @@ import aeminium.runtime.implementations.Configuration;
 
 public class ForHelper {
 	
-	public static boolean binarySplit = Configuration.getProperty(ForHelper.class, "BinarySplitting", true);
+	public static boolean binarySplit = Configuration.getProperty(ForHelper.class, "BinarySplitting", false);
 	
 	public static BiFunction<Integer, Integer, Integer> intSum = (t1, t2) -> t1 + t2;
 	public static BiFunction<Long, Long, Long> longSum = (t1, t2) -> t1 + t2;
@@ -144,11 +144,9 @@ public class ForHelper {
 		};
 	}
 
-	public static <T> Body forContinuousIntegerReduce1Body(final int start, final int end,
+	public static <T> BodyWithField<T> forContinuousIntegerReduce1Body(final int start, final int end,
 			Function<Integer, T> fun, BiFunction<T, T, T> reduce, short hint) {
-		return new Body() {
-			T field;
-			@SuppressWarnings("unchecked")
+		return new BodyWithField<T>() {
 			@Override
 			public void execute(Runtime rt, Task current) throws Exception {
 				if (start == end) return;
@@ -157,23 +155,30 @@ public class ForHelper {
 				} else  if (binarySplit) {
 					if (rt.parallelize(current) && end-start >= 2) {
 						int half = (end - start)/2 + start;
-						Task h1 = rt.createNonBlockingTask(forContinuousIntegerReduce1Body(start, half, fun, reduce, hint), Hints.LOOPS);
-						Task h2 = rt.createNonBlockingTask(forContinuousIntegerReduce1Body(half, end, fun, reduce, hint), Hints.LOOPS);
+						BodyWithField<T> b1 = forContinuousIntegerReduce1Body(start, half, fun, reduce, hint);
+						BodyWithField<T> b2 = forContinuousIntegerReduce1Body(half, end, fun, reduce, hint);
+						Task h1 = rt.createNonBlockingTask(b1, Hints.LOOPS);
+						Task h2 = rt.createNonBlockingTask(b2, Hints.LOOPS);
 						rt.schedule(h1, Runtime.NO_PARENT, Runtime.NO_DEPS);
 						rt.schedule(h2, Runtime.NO_PARENT, Runtime.NO_DEPS);
-						field = reduce.apply((T) h1.getResult(), (T) h2.getResult());
+						h1.getResult();
+						h2.getResult();
+						field = reduce.apply(b1.field, b2.field);
 					} else {
 						field = seqForInteger(start, end, fun, reduce);
 					}
 				} else {
 					ArrayList<Task> children = new ArrayList<Task>();
+					ArrayList<BodyWithField<T>> bodies = new ArrayList<BodyWithField<T>>();
 					int bottom = start, top = end, pps = ForTask.PPS * ((Hints.check(hint, Hints.SMALL)) ? 100 : 1);
 					while (bottom < top) {
 						if (bottom % pps == 0 && top-bottom > 1 && rt.parallelize(current)) {
 							int half = (top - bottom)/2 + bottom;
-							Task otherHalf = rt.createNonBlockingTask(forContinuousIntegerReduce1Body(half, top, fun, reduce, hint), Hints.LOOPS);
+							BodyWithField<T> body = forContinuousIntegerReduce1Body(half, top, fun, reduce, hint);
+							Task otherHalf = rt.createNonBlockingTask(body, Hints.LOOPS);
 							rt.schedule(otherHalf, current, Runtime.NO_DEPS);
 							children.add(otherHalf);
+							bodies.add(body);
 							top = half;
 						} else {				
 							T res = fun.apply(bottom++);
@@ -181,7 +186,10 @@ public class ForHelper {
 						}
 					}
 					for (Task child : children) {
-						T r = (T) child.getResult();
+						child.getResult();
+					}
+					for (BodyWithField<T> b : bodies) {
+						T r = (T) b.field;
 						field = (field == null) ? r : reduce.apply(field, r);
 					}
 				}
@@ -190,11 +198,9 @@ public class ForHelper {
 		};
 	}
 
-	public static <T> Body forContinuousLongReduce1Body(final long start, final long end,
+	public static <T> BodyWithField<T> forContinuousLongReduce1Body(final long start, final long end,
 			Function<Long, T> fun, BiFunction<T, T, T> reduce, short hint) {
-		return new Body() {
-			T field;
-			@SuppressWarnings("unchecked")
+		return new BodyWithField<T>() {
 			@Override
 			public void execute(Runtime rt, Task current) throws Exception {
 				if (start == end) return;
@@ -203,23 +209,30 @@ public class ForHelper {
 				} else  if (binarySplit) {
 					if (rt.parallelize(current) && end-start >= 2) {
 						long half = (end - start)/2 + start;
-						Task h1 = rt.createNonBlockingTask(forContinuousLongReduce1Body(start, half, fun, reduce, hint), Hints.LOOPS);
-						Task h2 = rt.createNonBlockingTask(forContinuousLongReduce1Body(half, end, fun, reduce, hint), Hints.LOOPS);
+						BodyWithField<T> b1 = forContinuousLongReduce1Body(start, half, fun, reduce, hint);
+						BodyWithField<T> b2 = forContinuousLongReduce1Body(half, end, fun, reduce, hint);
+						Task h1 = rt.createNonBlockingTask(b1, Hints.LOOPS);
+						Task h2 = rt.createNonBlockingTask(b2, Hints.LOOPS);
 						rt.schedule(h1, Runtime.NO_PARENT, Runtime.NO_DEPS);
 						rt.schedule(h2, Runtime.NO_PARENT, Runtime.NO_DEPS);
-						field = reduce.apply((T) h1.getResult(), (T) h2.getResult());
+						h1.getResult();
+						h2.getResult();
+						field = reduce.apply(b1.field, b2.field);
 					} else {
 						field = seqForLong(start, end, fun, reduce);
 					}
 				} else {
 					ArrayList<Task> children = new ArrayList<Task>();
+					ArrayList<BodyWithField<T>> bodies = new ArrayList<BodyWithField<T>>();
 					long bottom = start, top = end, pps = ForTask.PPS * ((Hints.check(hint, Hints.SMALL)) ? 100 : 1);
 					while (bottom < top) {
 						if (bottom % pps == 0 && top-bottom > 1 && rt.parallelize(current)) {
 							long half = (top - bottom)/2 + bottom;
-							Task otherHalf = rt.createNonBlockingTask(forContinuousLongReduce1Body(half, top, fun, reduce, hint), Hints.LOOPS);
+							BodyWithField<T> body = forContinuousLongReduce1Body(half, top, fun, reduce, hint);
+							Task otherHalf = rt.createNonBlockingTask(body, Hints.LOOPS);
 							rt.schedule(otherHalf, current, Runtime.NO_DEPS);
 							children.add(otherHalf);
+							bodies.add(body);
 							top = half;
 						} else {				
 							T res = fun.apply(bottom++);
@@ -227,7 +240,10 @@ public class ForHelper {
 						}
 					}
 					for (Task child : children) {
-						T r = (T) child.getResult();
+						child.getResult();
+					}
+					for (BodyWithField<T> b : bodies) {
+						T r = (T) b.field;
 						field = (field == null) ? r : reduce.apply(field, r);
 					}
 				}
