@@ -2,7 +2,6 @@ package aeminium.runtime.futures;
 
 import java.util.Collection;
 
-import aeminium.runtime.Body;
 import aeminium.runtime.DataGroup;
 import aeminium.runtime.ErrorHandler;
 import aeminium.runtime.Runtime;
@@ -59,14 +58,7 @@ public class RuntimeManager {
 	}	
 	
 	public static boolean shouldSeq() {
-		if (currentTask.get() != null) {
-			return !rt.parallelize(currentTask.get());
-		}
-		return false;
-	}
-	
-	public static boolean shouldSeq(Task t) {
-		return !rt.parallelize(t);
+		return !rt.parallelize(currentTask.get());
 	}
 	
 	public static <T> void submit(final HollowFuture<T> f, Collection<Task> deps) {
@@ -82,25 +74,11 @@ public class RuntimeManager {
 			return;
 		}
 		*/
-		
-		Body b = new Body() {
-			@Override
-			public void execute(Runtime rt, Task current) throws Exception {
-				currentTask.set(current);
-				f.it = f.body.evaluate(current);
-				currentTask.set(null);
-			}
-			@Override
-			public String toString() {
-				return f.toString();
-			}
-		};
-			
 		Task t;
 		if (f.dg != null) {
-			t = rt.createAtomicTask(b, f.dg, Runtime.NO_HINTS);
+			t = rt.createAtomicTask(f, f.dg, Runtime.NO_HINTS);
 		} else {
-			t = rt.createNonBlockingTask(b, Runtime.NO_HINTS);
+			t = rt.createNonBlockingTask(f, Runtime.NO_HINTS);
 		}
 		f.dep = new DependencyTaskWrapper(t);
 		f.task = t;

@@ -4,12 +4,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import aeminium.runtime.DataGroup;
+import aeminium.runtime.Runtime;
 import aeminium.runtime.Task;
+import aeminium.runtime.Body;
 import aeminium.runtime.futures.dependencies.Dependency;
 
 
 /* The Base Class for all Futures, containing the task and the dependencies. */
-public abstract class HollowFuture<T> {
+public abstract class HollowFuture<T> implements Body {
 	
 	public Dependency dep;
 	public T it;
@@ -37,4 +39,8 @@ public abstract class HollowFuture<T> {
 		return it;
 	}
 	
+	@Override
+	public void execute(Runtime rt, Task current) throws Exception {
+		it = body.evaluate(current);
+	}
 }
