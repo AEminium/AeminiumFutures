@@ -25,40 +25,36 @@ public class ForHelper {
 	
 	public static void forContinuousInteger(int start, int end, Function<Integer, Void> fun, short hint) {
 		if (start == end) return;
-		Task parent = RuntimeManager.getCurrentTask();
 		Body b = forContinuousIntegerBody(start, end, fun, hint);
 		Task current = RuntimeManager.rt.createNonBlockingTask(b,
 				(short) (Hints.RECURSION | Hints.LOOPS));
-		RuntimeManager.rt.schedule(current, parent, Runtime.NO_DEPS);
+		RuntimeManager.rt.schedule(current, Runtime.NO_PARENT, Runtime.NO_DEPS);
 		current.getResult();
 	}
 	
 	public static void forContinuousLong(long start, long end, Function<Long, Void> fun, short hint) {
 		if (start == end) return;		
-		Task parent = RuntimeManager.getCurrentTask();
 		Body b = forContinuousLongBody(start, end, fun, hint);
 		Task current = RuntimeManager.rt.createNonBlockingTask(b,
 				(short) (Hints.RECURSION | Hints.LOOPS));
-		RuntimeManager.rt.schedule(current, parent, Runtime.NO_DEPS);
+		RuntimeManager.rt.schedule(current, Runtime.NO_PARENT, Runtime.NO_DEPS);
 		current.getResult();
 	}
 	
 	
 	public static <T> HollowFuture<T> forContinuousIntegerReduce1(int start, int end, Function<Integer, T> fun, BiFunction<T, T, T> reduce, short hint) {
-		Task parent = RuntimeManager.getCurrentTask();
 		Body b = forContinuousIntegerReduce1Body(start, end, fun, reduce, hint);
 		Task current = RuntimeManager.rt.createNonBlockingTask(b,
 				(short) (Hints.RECURSION | Hints.LOOPS));
-		RuntimeManager.rt.schedule(current, parent, Runtime.NO_DEPS);
+		RuntimeManager.rt.schedule(current, Runtime.NO_PARENT, Runtime.NO_DEPS);
 		return new FutureWrapper<T>(current);
 	}
 	
 	public static <T> HollowFuture<T> forContinuousLongReduce1(long start, long end, Function<Long, T> fun, BiFunction<T, T, T> reduce, short hint) {
-		Task parent = RuntimeManager.getCurrentTask();
 		Body b = forContinuousLongReduce1Body(start, end, fun, reduce, hint);
 		Task current = RuntimeManager.rt.createNonBlockingTask(b,
 				(short) (Hints.RECURSION | Hints.LOOPS));
-		RuntimeManager.rt.schedule(current, parent, Runtime.NO_DEPS);
+		RuntimeManager.rt.schedule(current, Runtime.NO_PARENT, Runtime.NO_DEPS);
 		return new FutureWrapper<T>(current);
 	}
 

@@ -6,7 +6,6 @@ import aeminium.runtime.DataGroup;
 import aeminium.runtime.ErrorHandler;
 import aeminium.runtime.Runtime;
 import aeminium.runtime.Task;
-import aeminium.runtime.futures.dependencies.DependencyTaskWrapper;
 import aeminium.runtime.implementations.Factory;
 
 public class RuntimeManager {
@@ -62,7 +61,7 @@ public class RuntimeManager {
 	}
 	
 	public static <T> void submit(final HollowFuture<T> f, Collection<Task> deps) {
-		RuntimeManager.submit(f, getCurrentTask(), deps);
+		RuntimeManager.submit(f, Runtime.NO_PARENT, deps);
 	}
 	
 	public static <T> void submit(final HollowFuture<T> f, Task parent, Collection<Task> deps) {
@@ -80,21 +79,12 @@ public class RuntimeManager {
 		} else {
 			t = rt.createNonBlockingTask(f, Runtime.NO_HINTS);
 		}
-		f.dep = new DependencyTaskWrapper(t);
 		f.task = t;
 		rt.schedule(t, parent, deps);
 	}
 	
 	public static DataGroup getNewDataGroup() {
 		return rt.createDataGroup();
-	}
-
-	public static Task getCurrentTask() {
-		Task current = Runtime.NO_PARENT;
-		if (currentTask.get() != null) {
-			current = currentTask.get();
-		}
-		return current;
 	}
 	
 }
