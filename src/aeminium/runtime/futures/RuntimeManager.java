@@ -1,5 +1,6 @@
 package aeminium.runtime.futures;
 
+import java.util.Arrays;
 import java.util.Collection;
 
 import aeminium.runtime.DataGroup;
@@ -58,6 +59,20 @@ public class RuntimeManager {
 	
 	public static boolean shouldSeq() {
 		return !rt.parallelize(currentTask.get());
+	}
+	
+	public static <T> FBody<T> createTask(FBody<T> b, Task... ts) {
+		Task t = RuntimeManager.rt.createNonBlockingTask(b, Runtime.NO_HINTS);
+		b.setTask(t);
+		RuntimeManager.rt.schedule(t, Runtime.NO_PARENT, Arrays.asList(ts));
+		return b;
+	}
+	
+	public static <T> FBody<T> createTask(FBody<T> b) {
+		Task t = RuntimeManager.rt.createNonBlockingTask(b, Runtime.NO_HINTS);
+		b.setTask(t);
+		RuntimeManager.rt.schedule(t, Runtime.NO_PARENT, Runtime.NO_DEPS);
+		return b;
 	}
 	
 	public static <T> void submit(final HollowFuture<T> f, Collection<Task> deps) {
