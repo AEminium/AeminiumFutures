@@ -4,8 +4,8 @@ import aeminium.runtime.Body;
 import aeminium.runtime.Task;
 
 public abstract class FBody<T> implements Body{
-	Task t;
-	T ret;
+	public Task t;
+	public T ret;
 	
 	public T get() {
 		t.getResult();
