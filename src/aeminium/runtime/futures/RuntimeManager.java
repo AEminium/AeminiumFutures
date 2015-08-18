@@ -10,7 +10,7 @@ import aeminium.runtime.Task;
 import aeminium.runtime.implementations.Factory;
 
 public class RuntimeManager {
-	static ThreadLocal<Task> currentTask = new ThreadLocal<Task>();
+	public static ThreadLocal<Task> currentTask = new ThreadLocal<Task>();
 
 	static int rtcalls = 0;
 	public final static Runtime rt = Factory.getRuntime();
@@ -64,14 +64,14 @@ public class RuntimeManager {
 	public static <T> FBody<T> createTask(FBody<T> b, Task... ts) {
 		Task t = RuntimeManager.rt.createNonBlockingTask(b, Runtime.NO_HINTS);
 		b.setTask(t);
-		RuntimeManager.rt.schedule(t, Runtime.NO_PARENT, Arrays.asList(ts));
+		RuntimeManager.rt.schedule(t, currentTask.get(), Arrays.asList(ts));
 		return b;
 	}
 	
 	public static <T> FBody<T> createTask(FBody<T> b) {
 		Task t = RuntimeManager.rt.createNonBlockingTask(b, Runtime.NO_HINTS);
 		b.setTask(t);
-		RuntimeManager.rt.schedule(t, Runtime.NO_PARENT, Runtime.NO_DEPS);
+		RuntimeManager.rt.schedule(t, currentTask.get(), Runtime.NO_DEPS);
 		return b;
 	}
 	
