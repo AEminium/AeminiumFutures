@@ -71,7 +71,9 @@ public class RuntimeManager {
 	public static <T> FBody<T> createTask(FBody<T> b) {
 		Task t = RuntimeManager.rt.createNonBlockingTask(b, Runtime.NO_HINTS);
 		b.setTask(t);
-		RuntimeManager.rt.schedule(t, currentTask.get(), Runtime.NO_DEPS);
+		Task parent = currentTask.get();
+		if (parent == null) parent = Runtime.NO_PARENT;
+		RuntimeManager.rt.schedule(t, parent, Runtime.NO_DEPS);
 		return b;
 	}
 	
