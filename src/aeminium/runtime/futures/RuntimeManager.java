@@ -10,11 +10,7 @@ import aeminium.runtime.Task;
 import aeminium.runtime.implementations.Factory;
 
 public class RuntimeManager {
-	public static ThreadLocal<Task> currentTask = new ThreadLocal<Task>() {
-	    protected Task initialValue() {
-	        return Runtime.NO_PARENT;
-	    }
-	};
+	public static ThreadLocal<Task> currentTask = new ThreadLocal<Task>();
 
 	static int rtcalls = 0;
 	public final static Runtime rt = Factory.getRuntime();
