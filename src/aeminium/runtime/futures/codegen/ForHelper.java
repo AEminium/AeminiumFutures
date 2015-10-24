@@ -8,6 +8,7 @@ import aeminium.runtime.Body;
 import aeminium.runtime.Hints;
 import aeminium.runtime.Runtime;
 import aeminium.runtime.Task;
+import aeminium.runtime.futures.Future;
 import aeminium.runtime.futures.FutureWrapper;
 import aeminium.runtime.futures.HollowFuture;
 import aeminium.runtime.futures.RuntimeManager;
@@ -23,6 +24,123 @@ public class ForHelper {
 	public static BiFunction<Float, Float, Float> floatSum = (t1, t2) -> t1 + t2;
 	public static BiFunction<Double, Double, Double> doubleSum = (t1, t2) -> t1 + t2;
 	
+	public static void forContinuousInteger(int start, int end, Function<Integer, Void> fun, short hint, int units) {
+		int nTasks = Math.min(units, java.lang.Runtime.getRuntime().availableProcessors());
+		Task[] tasks = new Task[nTasks];
+		final int span = (int) Math.ceil( (end - start) / ((double) nTasks));
+		final int top = end;
+		for (int i=0; i<nTasks; i++) {
+			final int j = i;
+			tasks[i] = RuntimeManager.rt.createNonBlockingTask(new Body() {
+				@Override
+				public void execute(Runtime rt, Task current) throws Exception {
+					for (int i = j*span; i < (j+1)*span && i < top; i++) {
+						fun.apply(i);
+					}
+				}
+			}, hint);
+		}
+		for (Task t : tasks) {
+			t.getResult();
+		}
+	}
+	
+	public static void forContinuousLong(long start, long end, Function<Long, Void> fun, short hint, int units) {
+		int nTasks = Math.min(units, java.lang.Runtime.getRuntime().availableProcessors());
+		Task[] tasks = new Task[nTasks];
+		final long span = (int) Math.ceil( (end - start) / ((double) nTasks));
+		final long top = end;
+		for (int i=0; i<nTasks; i++) {
+			final int j = i;
+			tasks[i] = RuntimeManager.rt.createNonBlockingTask(new Body() {
+				@Override
+				public void execute(Runtime rt, Task current) throws Exception {
+					for (long i = j*span; i < (j+1)*span && i < top; i++) {
+						fun.apply(i);
+					}
+				}
+			}, hint);
+		}
+		for (Task t : tasks) {
+			t.getResult();
+		}
+	}
+	
+	public interface ReduceBody<T> extends Body {
+		public T getAcc();
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static <T> HollowFuture<T> forContinuousIntegerReduce1(int start, int end, Function<Integer, T> fun, BiFunction<T, T, T> reduce, short hint, int units) {
+		final int nTasks = Math.min(units, java.lang.Runtime.getRuntime().availableProcessors());
+		final Task[] tasks = new Task[nTasks];
+		final ReduceBody<T>[] bodies = new ReduceBody[nTasks];
+		final int span = (int) Math.ceil( (end - start) / ((double) nTasks));
+		final int top = end;
+		for (int i=0; i<nTasks; i++) {
+			final int j = i;
+			bodies[i] = new ReduceBody<T>() {
+				private T acc = null;
+				public T getAcc() {
+					return acc;
+				}
+				@Override
+				public void execute(Runtime rt, Task current) throws Exception {
+					for (int i = j*span; i < (j+1)*span && i < top; i++) {
+						T curr = fun.apply(i);
+						if (acc == null) acc = curr; else acc = reduce.apply(acc, curr);
+					}
+				}
+			};
+			tasks[i] = RuntimeManager.rt.createNonBlockingTask(bodies[i], hint);
+		}
+		return new Future<T>( (t) -> { 
+			T acc = null;
+			for (int i=0; i<nTasks; i++) {
+				tasks[i].getResult();
+				T curr = bodies[i].getAcc();
+				if (acc == null) acc = curr; else acc = reduce.apply(acc, curr);
+			}
+			return acc;
+		});
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static <T> HollowFuture<T> forContinuousLongReduce1(long start, long end, Function<Long, T> fun, BiFunction<T, T, T> reduce, short hint, int units) {
+		final int nTasks = Math.min(units, java.lang.Runtime.getRuntime().availableProcessors());
+		final Task[] tasks = new Task[nTasks];
+		final ReduceBody<T>[] bodies = new ReduceBody[nTasks];
+		final long span = (int) Math.ceil( (end - start) / ((double) nTasks));
+		final long top = end;
+		for (int i=0; i<nTasks; i++) {
+			final int j = i;
+			bodies[i] = new ReduceBody<T>() {
+				private T acc = null;
+				public T getAcc() {
+					return acc;
+				}
+				@Override
+				public void execute(Runtime rt, Task current) throws Exception {
+					for (long i = j*span; i < (j+1)*span && i < top; i++) {
+						T curr = fun.apply(i);
+						if (acc == null) acc = curr; else acc = reduce.apply(acc, curr);
+					}
+				}
+			};
+			tasks[i] = RuntimeManager.rt.createNonBlockingTask(bodies[i], hint);
+		}
+		return new Future<T>( (t) -> { 
+			T acc = null;
+			for (int i=0; i<nTasks; i++) {
+				tasks[i].getResult();
+				T curr = bodies[i].getAcc();
+				if (acc == null) acc = curr; else acc = reduce.apply(acc, curr);
+			}
+			return acc;
+		});
+	}
+	
+	
 	public static void forContinuousInteger(int start, int end, Function<Integer, Void> fun, short hint) {
 		if (start == end) return;
 		Body b = forContinuousIntegerBody(start, end, fun, hint);
@@ -32,7 +150,7 @@ public class ForHelper {
 		current.getResult();
 	}
 	
-	public static void forContinuousLong(long start, long end, Function<Long, Void> fun, short hint) {
+	public static void forContinuousLong(long  start, long end, Function<Long, Void> fun, short hint) {
 		if (start == end) return;		
 		Body b = forContinuousLongBody(start, end, fun, hint);
 		Task current = RuntimeManager.rt.createNonBlockingTask(b,
