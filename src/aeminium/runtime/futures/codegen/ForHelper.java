@@ -18,6 +18,7 @@ import aeminium.runtime.implementations.Configuration;
 public class ForHelper {
 	
 	public static boolean binarySplit = Configuration.getProperty(ForHelper.class, "BinarySplitting", false);
+	public static boolean compilerRange = Configuration.getProperty(ForHelper.class, "CompilerRange", true);
 	
 	public static BiFunction<Integer, Integer, Integer> intSum = (t1, t2) -> t1 + t2;
 	public static BiFunction<Long, Long, Long> longSum = (t1, t2) -> t1 + t2;
@@ -25,6 +26,10 @@ public class ForHelper {
 	public static BiFunction<Double, Double, Double> doubleSum = (t1, t2) -> t1 + t2;
 	
 	public static void forContinuousInteger(int start, int end, Function<Integer, Void> fun, short hint, int units) {
+		if (!compilerRange) {
+			forContinuousInteger(start, end, fun, hint);
+			return;
+		}
 		int nTasks = Math.min(units, java.lang.Runtime.getRuntime().availableProcessors());
 		Task[] tasks = new Task[nTasks];
 		final int span = (int) Math.ceil( (end - start) / ((double) nTasks));
@@ -46,6 +51,10 @@ public class ForHelper {
 	}
 	
 	public static void forContinuousLong(long start, long end, Function<Long, Void> fun, short hint, int units) {
+		if (!compilerRange) {
+			forContinuousLong(start, end, fun, hint);
+			return;
+		}
 		int nTasks = Math.min(units, java.lang.Runtime.getRuntime().availableProcessors());
 		Task[] tasks = new Task[nTasks];
 		final long span = (int) Math.ceil( (end - start) / ((double) nTasks));
@@ -72,6 +81,9 @@ public class ForHelper {
 	
 	@SuppressWarnings("unchecked")
 	public static <T> HollowFuture<T> forContinuousIntegerReduce1(int start, int end, Function<Integer, T> fun, BiFunction<T, T, T> reduce, short hint, int units) {
+		if (!compilerRange) {
+			return forContinuousIntegerReduce1(start, end, fun, reduce, hint);
+		}
 		final int nTasks = Math.min(units, java.lang.Runtime.getRuntime().availableProcessors());
 		final Task[] tasks = new Task[nTasks];
 		final ReduceBody<T>[] bodies = new ReduceBody[nTasks];
@@ -107,6 +119,9 @@ public class ForHelper {
 	
 	@SuppressWarnings("unchecked")
 	public static <T> HollowFuture<T> forContinuousLongReduce1(long start, long end, Function<Long, T> fun, BiFunction<T, T, T> reduce, short hint, int units) {
+		if (!compilerRange) {
+			return forContinuousLongReduce1(start, end, fun, reduce, hint);
+		}
 		final int nTasks = Math.min(units, java.lang.Runtime.getRuntime().availableProcessors());
 		final Task[] tasks = new Task[nTasks];
 		final ReduceBody<T>[] bodies = new ReduceBody[nTasks];
