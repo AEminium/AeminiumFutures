@@ -30,7 +30,7 @@ public class ForHelper {
 			forContinuousInteger(start, end, fun, hint);
 			return;
 		}
-		int nTasks = Math.min(units, java.lang.Runtime.getRuntime().availableProcessors());
+		final int nTasks = Math.min(units, 2*java.lang.Runtime.getRuntime().availableProcessors());
 		Task[] tasks = new Task[nTasks];
 		final int span = (int) Math.ceil( (end - start) / ((double) nTasks));
 		final int top = end;
@@ -44,6 +44,7 @@ public class ForHelper {
 					}
 				}
 			}, hint);
+			RuntimeManager.rt.schedule(tasks[i], Runtime.NO_PARENT, Runtime.NO_DEPS);
 		}
 		for (Task t : tasks) {
 			t.getResult();
@@ -55,7 +56,7 @@ public class ForHelper {
 			forContinuousLong(start, end, fun, hint);
 			return;
 		}
-		int nTasks = Math.min(units, java.lang.Runtime.getRuntime().availableProcessors());
+		final int nTasks = Math.min(units, 2*java.lang.Runtime.getRuntime().availableProcessors());
 		Task[] tasks = new Task[nTasks];
 		final long span = (int) Math.ceil( (end - start) / ((double) nTasks));
 		final long top = end;
@@ -69,6 +70,7 @@ public class ForHelper {
 					}
 				}
 			}, hint);
+			RuntimeManager.rt.schedule(tasks[i], Runtime.NO_PARENT, Runtime.NO_DEPS);
 		}
 		for (Task t : tasks) {
 			t.getResult();
@@ -84,7 +86,7 @@ public class ForHelper {
 		if (!compilerRange) {
 			return forContinuousIntegerReduce1(start, end, fun, reduce, hint);
 		}
-		final int nTasks = Math.min(units, java.lang.Runtime.getRuntime().availableProcessors());
+		final int nTasks = Math.min(units, 2*java.lang.Runtime.getRuntime().availableProcessors());
 		final Task[] tasks = new Task[nTasks];
 		final ReduceBody<T>[] bodies = new ReduceBody[nTasks];
 		final int span = (int) Math.ceil( (end - start) / ((double) nTasks));
@@ -105,6 +107,7 @@ public class ForHelper {
 				}
 			};
 			tasks[i] = RuntimeManager.rt.createNonBlockingTask(bodies[i], hint);
+			RuntimeManager.rt.schedule(tasks[i], Runtime.NO_PARENT, Runtime.NO_DEPS);
 		}
 		return new Future<T>( (t) -> { 
 			T acc = null;
@@ -122,7 +125,7 @@ public class ForHelper {
 		if (!compilerRange) {
 			return forContinuousLongReduce1(start, end, fun, reduce, hint);
 		}
-		final int nTasks = Math.min(units, java.lang.Runtime.getRuntime().availableProcessors());
+		final int nTasks = Math.min(units, 2*java.lang.Runtime.getRuntime().availableProcessors());
 		final Task[] tasks = new Task[nTasks];
 		final ReduceBody<T>[] bodies = new ReduceBody[nTasks];
 		final long span = (int) Math.ceil( (end - start) / ((double) nTasks));
@@ -143,6 +146,7 @@ public class ForHelper {
 				}
 			};
 			tasks[i] = RuntimeManager.rt.createNonBlockingTask(bodies[i], hint);
+			RuntimeManager.rt.schedule(tasks[i], Runtime.NO_PARENT, Runtime.NO_DEPS);
 		}
 		return new Future<T>( (t) -> { 
 			T acc = null;
