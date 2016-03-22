@@ -162,6 +162,12 @@ public class ForHelper {
 	
 	public static void forContinuousInteger(int start, int end, Function<Integer, Void> fun, short hint) {
 		if (start == end) return;
+		if (RuntimeManager.shouldSeq()) {
+			for (int i=start; i<end; i++) {
+				fun.apply(i);
+			}
+			return;
+		}
 		Body b = forContinuousIntegerBody(start, end, fun, hint);
 		Task current = RuntimeManager.rt.createNonBlockingTask(b,
 				(short) (Hints.RECURSION | Hints.LOOPS));
@@ -170,7 +176,13 @@ public class ForHelper {
 	}
 	
 	public static void forContinuousLong(long  start, long end, Function<Long, Void> fun, short hint) {
-		if (start == end) return;		
+		if (start == end) return;
+		if (!RuntimeManager.rt.parallelize(null)) {
+			for (long i=start; i<end; i++) {
+				fun.apply(i);
+			}
+			return;
+		}
 		Body b = forContinuousLongBody(start, end, fun, hint);
 		Task current = RuntimeManager.rt.createNonBlockingTask(b,
 				(short) (Hints.RECURSION | Hints.LOOPS));
